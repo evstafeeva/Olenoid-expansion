@@ -1,0 +1,336 @@
+syntax = "proto3";
+
+option cc_enable_arenas = true;
+
+package spex;
+
+message IAccessPanel {
+  message LoginRequest {
+    string login    = 1;
+    string password = 2;
+    string ip       = 3;
+    uint32 port     = 4;
+  }
+  message LoginSuccess {
+    uint32 port     = 1;
+  }
+  message LoginFailed {
+    string reason   = 1;
+  }
+  
+  oneof choice {
+    LoginRequest login        = 1;
+    
+    LoginSuccess loginSuccess = 21;
+    LoginFailed  loginFailed  = 22;
+  }
+}
+
+
+message IEngine
+{
+
+  message GetSpecification {}
+  message Specification {
+    uint32 maxThrust = 1;
+  }
+  
+  message SetThrust {
+    double x           = 1;
+    double y           = 2;
+    uint32 thrust      = 4;
+    uint32 duration_ms = 5;
+  }
+  
+  message GetThrust {}
+  
+  message CurrentThrust {
+    double x      = 1;
+    double y      = 2;
+    uint32 thrust = 4;
+  }
+
+  oneof choice {
+    GetSpecification getSpecification = 1;
+    SetThrust        setThrust        = 2;
+    GetThrust        getThrust        = 3;
+    
+    Specification    specification    = 21;
+    CurrentThrust    currentThrust    = 22;
+  }
+  
+}
+
+
+message IShip {
+  message GetState {}
+  message GetStateResponse {
+    double weight = 1;
+  }
+
+  oneof choice {
+    GetState         stateRequest = 1;
+
+    GetStateResponse stateResponse = 21;
+  }
+}
+
+
+message INavigation {
+
+  message GetPosition {}
+  message GetPositionResponse {
+    double x   = 1;
+    double y   = 2;
+    double vx  = 4;
+    double vy  = 5;
+  }
+  
+  oneof choice {
+    GetPosition positionRequest = 1;
+    
+    GetPositionResponse positionResponse = 2;
+  }
+}
+
+
+message ICelestialScanner {
+
+  message GetSpecification {}
+  message Specification {
+    uint32 max_radius_km      = 1;
+    uint32 processing_time_us = 2;
+  }
+
+  message Scan {
+    uint32 scanning_radius_km = 1;
+    uint32 minimal_radius_m   = 2;
+  }
+
+  message ScanResults {
+    message AsteroidInfo {
+      uint32 id = 1;
+      double x  = 2;
+      double y  = 3;
+      double vx = 4;
+      double vy = 5;
+      double r  = 6;
+    }
+    
+    repeated AsteroidInfo asteroids = 1;
+    uint32                left      = 2;
+  }
+
+  message ScannerBusy {}
+  
+  
+  oneof choice {
+    GetSpecification get_specification = 1;
+    Scan             scan              = 2;
+    
+    Specification specification  = 21;
+    ScanResults   scan_result    = 22;
+    ScannerBusy   busy_response  = 23;
+  }
+  
+}
+
+message IAsteroidScanner {
+
+  message GetSpecification {}
+  message Specification {
+    uint32 max_distance     = 1;
+    uint32 scanning_time_ms = 2;
+  }
+  
+  message ScanRequest {
+    uint32 asteroid_id = 1;
+  }
+  message ScanResult {
+    uint32 asteroid_id       = 1;
+    double weight            = 2;
+    double metals_percent    = 3;
+    double ice_percent       = 4;
+    double silicates_percent = 5;
+  }
+  message ScanFailed {}
+
+
+  oneof choice {
+    GetSpecification get_specification = 1;
+    ScanRequest      scan_request      = 2;
+    
+    Specification    specification     = 21;
+    ScanResult       scan_result       = 22;
+    ScanFailed       scan_failed       = 23;
+  }
+}
+
+
+enum ResourceType {
+  RESOURCE_METTALS   = 0;
+  RESOURCE_SILICATES = 1;
+  RESOURCE_ICE       = 2;
+}
+
+message ResourceItem {
+  ResourceType type  = 1;
+  double       amount = 2;
+}
+
+
+message IResourceContainer {
+
+  enum Error {
+    ERROR_INTERNAL             = 0;
+    ERROR_PORT_ALREADY_OPEN    = 1;
+    ERROR_PORT_DOESNT_EXIST    = 2;
+    ERROR_PORT_IS_NOT_OPENED   = 3;
+    ERROR_PORT_HAS_BEEN_CLOSED = 4;
+    ERROR_INVALID_KEY          = 5;
+    ERROR_TOO_FAR              = 6;
+    ERROR_TRANSFER_IN_PROGRESS = 7;
+    ERROR_NOT_ENOUGH_RESOURCES = 8;
+  }
+
+  message OpenPort {
+    uint32 access_key = 1;
+  }
+  
+  message Content {
+    uint32 volume = 1;
+    double used   = 2;
+    repeated ResourceItem resources = 3;
+  }
+
+  message Transfer {
+    uint32 port_id        = 1;
+    uint32 access_key     = 2;
+    ResourceItem resource = 3;
+  }
+  
+  
+  message OnError {
+    Error code = 1;
+  }
+  
+  oneof choice {
+    // Requests and command from Client
+    bool           get_content       = 1;
+    OpenPort       open_port         = 2;
+    bool           close_port        = 3;
+    Transfer       transfer          = 4;
+    
+    Content        content            = 21;
+    uint32         port_opened        = 22;
+    bool           port_closed        = 23;
+    Error          transfer_failed    = 24;
+    ResourceItem   transfer_report    = 25;
+    bool           transfer_complete  = 26;
+    Error          on_error           = 27;
+  }
+}
+
+
+message IAsteroidMiner {
+
+  enum Status {
+    SUCCESS               = 0;
+    INTERNAL_ERROR        = 1;
+    ASTEROID_DOESNT_EXIST = 2;
+    MINER_IS_BUSY         = 5;
+    ASTEROID_TOO_FAR      = 3;
+    NO_SPACE_AVALIABLE    = 4;
+  }
+
+  message Specification {
+    double max_distance  = 1;
+    uint32 cycle_time_ms = 2;
+  }
+
+  message MiningTask {
+    uint32       asteroid_id = 1;
+    ResourceType resource    = 2;
+  }
+
+  oneof choice {
+    bool          get_specification = 1;
+    MiningTask    start_mining      = 2;
+    bool          stop_mining       = 3;
+
+    Specification specification       = 21;
+    Status        start_mining_status = 22;
+    ResourceItem  mining_report       = 23;
+    Status        stop_mining_status  = 24;
+    Status        on_error            = 25;
+  }
+
+}
+
+
+message ICommutator {
+
+  message GetTotalSlots {}
+  message GetTotalSlotsResponse {
+    uint32 nTotalSlots = 1;
+  }
+
+  message GetModuleInfo {
+    uint32 nSlotId     = 1;
+  }
+  message GetAllModulesInfo {}
+  message ModuleInfo {
+    uint32 nSlotId     = 1;
+    string sModuleType = 2;
+    string sModuleName = 3;
+  }
+
+  message OpenTunnel {
+    uint32 nSlotId   = 2;
+  }
+  message OpenTunnelSuccess {
+    uint32 nTunnelId = 2;
+  }
+  message OpenTunnelFailed {}
+
+  message CloseTunnel {
+    uint32 nTunnelId = 1;
+  }
+  message TunnelClosed {
+    uint32 nTunnelId = 1;
+  }
+
+  oneof choice {
+    // Requests and command from Client
+    GetTotalSlots     getTotalSlots          = 1;
+    GetModuleInfo     getModuleInfo          = 2;
+    GetAllModulesInfo getAllModulesInfo      = 3;
+    OpenTunnel        openTunnel             = 4;
+    CloseTunnel       closeTunnel            = 5;
+
+    // Responces and indications from server
+    GetTotalSlotsResponse totalSlotsResponse = 41;
+    ModuleInfo            moduleInfo         = 42;
+    OpenTunnelSuccess     openTunnelSuccess  = 43;
+    OpenTunnelFailed      openTunnelFailed   = 44; 
+    TunnelClosed          tunnelClosed       = 45;
+  }
+}
+
+message Message {
+  uint32 tunnelId = 1;
+
+  oneof choice {
+    // All possible interfaces are listed here
+    Message            encapsulated       = 2;
+    IAccessPanel       accessPanel        = 3;
+    ICommutator        commutator         = 4;
+    IShip              ship               = 5;
+    INavigation        navigation         = 6;
+    IEngine            engine             = 7;
+    ICelestialScanner  celestialScanner   = 8;
+    IAsteroidScanner   asteroid_scanner   = 9;
+    IResourceContainer resource_container = 10;
+    IAsteroidMiner     asteroid_miner     = 11;
+  }
+}
