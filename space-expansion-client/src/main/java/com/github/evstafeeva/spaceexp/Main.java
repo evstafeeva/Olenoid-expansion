@@ -1,8 +1,10 @@
 package com.github.evstafeeva.spaceexp;
 
+import com.github.evstafeeva.spaceexp.Geometry.Position;
 import com.github.evstafeeva.spaceexp.modules.AccessPanel;
 import com.github.evstafeeva.spaceexp.modules.Commutator;
 import com.github.evstafeeva.spaceexp.modules.ModuleInfo;
+import com.github.evstafeeva.spaceexp.modules.Ship;
 import com.github.evstafeeva.spaceexp.transport.ProtobufChannel;
 import com.github.evstafeeva.spaceexp.transport.UdpChannel;
 import com.github.evstafeeva.spaceexp.transport.VirtualChannel;
@@ -62,11 +64,17 @@ public class Main {
 
         VirtualChannel channelToShip = rootCommutator.openTunnel(0);
 
-        Commutator shipCommutator = new Commutator();
-        shipCommutator.linkToChannel(channelToShip);
-        channelToShip.linkToTerminal(shipCommutator);
+        Ship ship = new Ship();
+        ship.linkToChannel(channelToShip);
+        channelToShip.linkToTerminal(ship);
 
-        exploreCommutator(shipCommutator, "Ship");
+        while (true) {
+            Position position = ship.getPosition();
+            System.out.println(position.toString());
+            try {
+                Thread.sleep(500);
+            } catch(Exception exception) {}
+        }
     }
 
     private static void exploreCommutator(Commutator commutator, String name) {

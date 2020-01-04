@@ -1,21 +1,18 @@
 package com.github.evstafeeva.spaceexp.modules;
 
 import com.github.evstafeeva.spaceexp.transport.BufferedTerminal;
-import com.github.evstafeeva.spaceexp.transport.IProtobufChannel;
 import com.github.evstafeeva.spaceexp.transport.VirtualChannel;
 import spex.Protocol;
 
 import java.util.HashMap;
 
 public class Commutator extends BufferedTerminal {
-    private IProtobufChannel channel;
     private HashMap<Integer, VirtualChannel> tunnelsMap = new HashMap<Integer, VirtualChannel>();
 
-    public void linkToChannel(IProtobufChannel channel) {
-        this.channel = channel;
-    }
-
     public void onMessageReceived(Protocol.Message message) {
+        // необходимо переопределить эту функцию (исходная релизация есть в BufferedTerminal) так, чтобы
+        // все инкапсулированные сообщения не попадали в очередь, а сразу прокидывались в соответствующий
+        // туннель. Все остальные сообщения обрабатываются как обычно.
         if (message.getChoiceCase() == Protocol.Message.ChoiceCase.ENCAPSULATED) {
             int tunnelId = message.getTunnelId();
             VirtualChannel tunnel = tunnelsMap.get(tunnelId);
@@ -31,7 +28,7 @@ public class Commutator extends BufferedTerminal {
             return 0;
         }
 
-        Protocol.ICommutator response = waitCommutatorMessage();
+        Protocol.ICommutator response = waitCommutatorMessage(1000);
         if (response == null) {
             return 0;
         }
@@ -50,7 +47,7 @@ public class Commutator extends BufferedTerminal {
             return null;
         }
 
-        Protocol.ICommutator response = waitCommutatorMessage();
+        Protocol.ICommutator response = waitCommutatorMessage(1000);
         if (response == null) {
             return null;
         }
@@ -72,7 +69,7 @@ public class Commutator extends BufferedTerminal {
             return null;
         }
 
-        Protocol.ICommutator response = waitCommutatorMessage();
+        Protocol.ICommutator response = waitCommutatorMessage(1000);
         if (response == null) {
             return null;
         }
@@ -81,7 +78,7 @@ public class Commutator extends BufferedTerminal {
             case OPENTUNNELSUCCESS:
                 int tunnelId = response.getOpenTunnelSuccess().getNTunnelId();
                 VirtualChannel tunnel = new VirtualChannel(tunnelId);
-                tunnel.linkToChannel(channel);
+                tunnel.linkToChannel(super.getChannel());
                 tunnelsMap.put(tunnelId, tunnel);
                 return tunnel;
             case OPENTUNNELFAILED:
@@ -93,53 +90,29 @@ public class Commutator extends BufferedTerminal {
         }
     }
 
-    private Protocol.ICommutator waitCommutatorMessage() {
-        if (channel == null)
-            return null;
-
-        while(true) {
-            Protocol.Message message = waitMessage(1000);
-            if (message == null)
-                return null;
-
-            switch (message.getChoiceCase()) {
-                case COMMUTATOR:
-                    // Наконец-то получили сообщение для данного коммутатора, его и вернём
-                    return message.getCommutator();
-                case ENCAPSULATED:
-                    // Получили инкапсулированное сообщение для виртуального канала
-                    // Потом добавим его обработку - будем класть в очередь соответствующего виртуального канала
-                    break;
-                default:
-                    // Неожиданное сообщение
-                    break;
-            }
-        }
-    }
-
     private boolean sendGetTotalSlotsRequest() {
-        return sendMessage(
+        return sendCommutatorMessage(
                 Protocol.ICommutator.newBuilder().setGetTotalSlots(
                         Protocol.ICommutator.GetTotalSlots.newBuilder().build()
                 ).build());
     }
 
     private boolean sendModuleInfoRequest(int slotId) {
-        return sendMessage(
+        return sendCommutatorMessage(
                 Protocol.ICommutator.newBuilder().setGetModuleInfo(
                         Protocol.ICommutator.GetModuleInfo.newBuilder().setNSlotId(slotId).build()
                 ).build());
     }
 
     private boolean sendOpenTunnelRequest(int slotId) {
-        return sendMessage(
+        return sendCommutatorMessage(
                 Protocol.ICommutator.newBuilder().setOpenTunnel(
                         Protocol.ICommutator.OpenTunnel.newBuilder().setNSlotId(slotId).build()
                 ).build());
     }
 
-    private boolean sendMessage(Protocol.ICommutator message) {
-        return channel != null && channel.send(Protocol.Message.newBuilder().setCommutator(message).build());
+    protected boolean sendCommutatorMessage(Protocol.ICommutator message) {
+        return super.send(Protocol.Message.newBuilder().setCommutator(message).build());
     }
 
 }

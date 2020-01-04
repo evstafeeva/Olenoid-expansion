@@ -2,16 +2,24 @@ package com.github.evstafeeva.spaceexp.transport;
 
 import spex.Protocol;
 
-import java.time.Duration;
-import java.time.LocalDate;
 import java.util.LinkedList;
 
 public class BufferedTerminal implements IProtobufTerminal {
-
+    private IProtobufChannel channel;
     private LinkedList<Protocol.Message> messagesQueue;
 
     public BufferedTerminal() {
         messagesQueue = new LinkedList<Protocol.Message>();
+    }
+
+    public void linkToChannel(IProtobufChannel channel) {
+        this.channel = channel;
+    }
+
+    protected IProtobufChannel getChannel() { return channel; }
+
+    protected boolean send(Protocol.Message message) {
+        return channel != null && channel.send(message);
     }
 
     public void onMessageReceived(Protocol.Message message) {
@@ -22,6 +30,8 @@ public class BufferedTerminal implements IProtobufTerminal {
 
     public Protocol.Message getMessage() {
         synchronized (messagesQueue) {
+            if (messagesQueue.isEmpty())
+                return null;
             return messagesQueue.pop();
         }
     }
@@ -38,6 +48,24 @@ public class BufferedTerminal implements IProtobufTerminal {
             } catch (Exception exception) {}
         }
         return null;
+    }
+
+    public Protocol.ICommutator waitCommutatorMessage(int timeoutMs) {
+        Protocol.Message message = waitMessage(timeoutMs);
+        if (message == null)
+            return null;
+        if (message.getChoiceCase() != Protocol.Message.ChoiceCase.COMMUTATOR)
+            return null;
+        return message.getCommutator();
+    }
+
+    public Protocol.INavigation waitNavigationMessage(int timeoutMs) {
+        Protocol.Message message = waitMessage(timeoutMs);
+        if (message == null)
+            return null;
+        if (message.getChoiceCase() != Protocol.Message.ChoiceCase.NAVIGATION)
+            return null;
+        return message.getNavigation();
     }
 
 }
