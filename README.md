@@ -3,7 +3,7 @@
 
 В директории ```space-expansion-client\src\main\java\``` выполняем:
 ```
-E:\third-party\protobuf\bin\protoc.exe --java_out=spex .\com\github\evstafeeva\spaceexp\Protocol.proto
+E:\third-party\protobuf\bin\protoc.exe --java_out=. .\com\github\evstafeeva\spaceexp\Protocol.proto
 ```
 
 Предварительно нужно обновить Protocol.proto файл.
