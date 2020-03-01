@@ -9,6 +9,9 @@ import java.util.HashMap;
 public class Commutator extends BufferedTerminal {
     private HashMap<Integer, VirtualChannel> tunnelsMap = new HashMap<Integer, VirtualChannel>();
 
+
+
+
     public void onMessageReceived(Protocol.Message message) {
         // необходимо переопределить эту функцию (исходная релизация есть в BufferedTerminal) так, чтобы
         // все инкапсулированные сообщения не попадали в очередь, а сразу прокидывались в соответствующий
@@ -62,6 +65,18 @@ public class Commutator extends BufferedTerminal {
                 // Unexpected response
                 return null;
         }
+    }
+
+    public VirtualChannel openTunnelTo(String moduleName, String expectedType) {
+        int totalSlots = getTotalSlots();
+        for (int slotId = 0; slotId < totalSlots; slotId++) {
+            ModuleInfo module = getModuleInfo(slotId);
+            if (module.getModuleName().equals(moduleName)) {
+                assert module.getModuleType().equals(expectedType) : "Unexpected type";
+                return openTunnel(module.getSlotId());
+            }
+        }
+        return null;
     }
 
     public VirtualChannel openTunnel(int slotId) {

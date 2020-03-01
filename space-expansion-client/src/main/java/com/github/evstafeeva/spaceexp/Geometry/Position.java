@@ -27,6 +27,20 @@ public class Position {
         return velocity;
     }
 
+    public double distanceTo(Position other) {
+        return distanceTo(other.position);
+    }
+
+    public Vector vectorTo(Point point) {
+        return new Vector(point.getX() - position.getX(), point.getY() - position.getY());
+    }
+
+    public double distanceTo(Point other) {
+        double dx = other.getX() - position.getX();
+        double dy = other.getY() - position.getY();
+        return Math.sqrt(dx*dx + dy*dy);
+    }
+
     public String toString() {
         return position.toString() + ", V: " + velocity.toString();
     }

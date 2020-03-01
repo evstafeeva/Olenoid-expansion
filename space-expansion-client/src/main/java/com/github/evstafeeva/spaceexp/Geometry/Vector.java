@@ -1,20 +1,29 @@
 package com.github.evstafeeva.spaceexp.Geometry;
 
 public class Vector {
-    private double  x = 0;
-    private double  y = 0;
-    private double  length = 0;
+    private double x = 0;
+    private double y = 0;
+    private double length = 0;
     private boolean isLengthCorrect = true;
 
-    public Vector() {}
+    public Vector() {
+    }
+
     public Vector(double x, double y) {
         set(x, y);
     }
+
+    public Vector(double x, double y, double length) {
+        this(x, y);
+        this.setLength(length);
+    }
+
     public Vector(Point from, Point to) {
         x = to.getX() - from.getX();
         y = to.getY() - from.getY();
         isLengthCorrect = false;
     }
+
     public Vector(Vector other) {
         x = other.x;
         y = other.y;
@@ -28,8 +37,14 @@ public class Vector {
         isLengthCorrect = false;
     }
 
-    public double getX() { return x; }
-    public double getY() { return y; }
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
     public double getLength() {
         if (!isLengthCorrect) {
             length = x * x + y * y;
@@ -37,6 +52,13 @@ public class Vector {
             isLengthCorrect = true;
         }
         return length;
+    }
+
+    public void setLength(double len) {
+        double k = len / getLength();
+        x *= k;
+        y *= k;
+        length *= k;
     }
 
     public Vector mult(double k) {
@@ -51,6 +73,10 @@ public class Vector {
             length *= k;
         }
         return this;
+    }
+
+    public Vector subtract(Vector other) {
+        return new Vector(x - other.x, y - other.y);
     }
 
     public String toString() {

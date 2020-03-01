@@ -1,26 +1,26 @@
 package com.github.evstafeeva.spaceexp;
 
+import com.github.evstafeeva.spaceexp.Geometry.Point;
 import com.github.evstafeeva.spaceexp.Geometry.Position;
-import com.github.evstafeeva.spaceexp.modules.AccessPanel;
-import com.github.evstafeeva.spaceexp.modules.Commutator;
-import com.github.evstafeeva.spaceexp.modules.ModuleInfo;
-import com.github.evstafeeva.spaceexp.modules.Ship;
+import com.github.evstafeeva.spaceexp.Geometry.Vector;
+import com.github.evstafeeva.spaceexp.modules.*;
+import com.github.evstafeeva.spaceexp.tacticalcore.MoveProcedure;
 import com.github.evstafeeva.spaceexp.transport.ProtobufChannel;
 import com.github.evstafeeva.spaceexp.transport.UdpChannel;
 import com.github.evstafeeva.spaceexp.transport.VirtualChannel;
 
 public class Main {
     public static void main(String[] args) {
-        String localIP    = args[0];
-        int    localPort  = Integer.parseInt(args[1]);
-        String remoteIP   = args[2];
-        int    remotePort = Integer.parseInt(args[3]);
+        String localIP = args[0];
+        int localPort = Integer.parseInt(args[1]);
+        String remoteIP = args[2];
+        int remotePort = Integer.parseInt(args[3]);
 
         System.out.println("Local: " + localIP + ":" + localPort);
         System.out.println("Remote: " + remoteIP + ":" + remotePort);
 
         // Создаём компоненты, реализующие транспорт в сторону сервера:
-        UdpChannel udpChannel =  new UdpChannel(localIP, localPort);
+        UdpChannel udpChannel = new UdpChannel(localIP, localPort);
         udpChannel.setRemoteAddress(remoteIP, remotePort);
 
         ProtobufChannel protobufChannel = new ProtobufChannel();
@@ -35,8 +35,8 @@ public class Main {
         // Канал будет постоянно читать сокет и прокидывать наверх (в данном случае в accessPanel) все получаемые
         // сообщения через функцию ITerminal.onMessageReceived()
         protobufChannel.linkToTerminal(accessPanel);
-        Thread transportThread = new Thread(){
-            public void run(){
+        Thread transportThread = new Thread() {
+            public void run() {
                 protobufChannel.run();
             }
         };
@@ -68,12 +68,22 @@ public class Main {
         ship.linkToChannel(channelToShip);
         channelToShip.linkToTerminal(ship);
 
+        Engine engine = new Engine();
+        {
+            VirtualChannel channel = ship.openTunnelTo("engine", "Engine");
+            engine.linkToChannel(channel);
+            channel.linkToTerminal(engine);
+        }
+
+        MoveProcedure moving = new MoveProcedure(ship, engine, new Point(2000, 5000));
+        moving.run();
+        System.out.println("Current position: " + ship.getPosition());
         while (true) {
-            Position position = ship.getPosition();
-            System.out.println(position.toString());
             try {
-                Thread.sleep(500);
-            } catch(Exception exception) {}
+                Thread.sleep(50);
+            } catch (Exception exception) {
+            }
+            System.out.println("Current position: " + ship.getPosition());
         }
     }
 
