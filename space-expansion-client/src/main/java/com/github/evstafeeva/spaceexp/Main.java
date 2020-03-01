@@ -62,7 +62,7 @@ public class Main {
 
         exploreCommutator(rootCommutator, "Root");
 
-        VirtualChannel channelToShip = rootCommutator.openTunnel(0);
+        VirtualChannel channelToShip = rootCommutator.openTunnel(1);
 
         Ship ship = new Ship();
         ship.linkToChannel(channelToShip);

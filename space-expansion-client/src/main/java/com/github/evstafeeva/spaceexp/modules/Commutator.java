@@ -34,8 +34,8 @@ public class Commutator extends BufferedTerminal {
         }
 
         switch (response.getChoiceCase()) {
-            case TOTALSLOTSRESPONSE:
-                return response.getTotalSlotsResponse().getNTotalSlots();
+            case TOTAL_SLOTS:
+                return response.getTotalSlots();
             default:
                 // Unexpected response
                 return 0;
@@ -53,11 +53,11 @@ public class Commutator extends BufferedTerminal {
         }
 
         switch (response.getChoiceCase()) {
-            case MODULEINFO:
+            case MODULE_INFO:
                 return new ModuleInfo(
                         nSlotId,
-                        response.getModuleInfo().getSModuleType(),
-                        response.getModuleInfo().getSModuleName());
+                        response.getModuleInfo().getModuleType(),
+                        response.getModuleInfo().getModuleName());
             default:
                 // Unexpected response
                 return null;
@@ -75,13 +75,13 @@ public class Commutator extends BufferedTerminal {
         }
 
         switch (response.getChoiceCase()) {
-            case OPENTUNNELSUCCESS:
-                int tunnelId = response.getOpenTunnelSuccess().getNTunnelId();
+            case OPEN_TUNNEL_REPORT:
+                int tunnelId = response.getOpenTunnelReport();
                 VirtualChannel tunnel = new VirtualChannel(tunnelId);
                 tunnel.linkToChannel(super.getChannel());
                 tunnelsMap.put(tunnelId, tunnel);
                 return tunnel;
-            case OPENTUNNELFAILED:
+            case OPEN_TUNNEL_FAILED:
                 System.out.println("Failed to open tunnel");
                 return null;
             default:
@@ -92,23 +92,17 @@ public class Commutator extends BufferedTerminal {
 
     private boolean sendGetTotalSlotsRequest() {
         return sendCommutatorMessage(
-                Protocol.ICommutator.newBuilder().setGetTotalSlots(
-                        Protocol.ICommutator.GetTotalSlots.newBuilder().build()
-                ).build());
+                Protocol.ICommutator.newBuilder().setTotalSlotsReq(true).build());
     }
 
     private boolean sendModuleInfoRequest(int slotId) {
         return sendCommutatorMessage(
-                Protocol.ICommutator.newBuilder().setGetModuleInfo(
-                        Protocol.ICommutator.GetModuleInfo.newBuilder().setNSlotId(slotId).build()
-                ).build());
+                Protocol.ICommutator.newBuilder().setModuleInfoReq(slotId).build());
     }
 
     private boolean sendOpenTunnelRequest(int slotId) {
         return sendCommutatorMessage(
-                Protocol.ICommutator.newBuilder().setOpenTunnel(
-                        Protocol.ICommutator.OpenTunnel.newBuilder().setNSlotId(slotId).build()
-                ).build());
+                Protocol.ICommutator.newBuilder().setOpenTunnel(slotId).build());
     }
 
     protected boolean sendCommutatorMessage(Protocol.ICommutator message) {

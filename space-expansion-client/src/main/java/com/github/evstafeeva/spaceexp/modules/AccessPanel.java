@@ -45,10 +45,10 @@ public class AccessPanel extends BufferedTerminal {
         Protocol.IAccessPanel accessPanelResponse = response.getAccessPanel();
 
         switch (accessPanelResponse.getChoiceCase()) {
-            case LOGINFAILED:
-                return new LoginStatus("Login failed: " + accessPanelResponse.getLoginFailed().getReason());
-            case LOGINSUCCESS:
-                return new LoginStatus(accessPanelResponse.getLoginSuccess().getPort());
+            case ACCESS_REJECTED:
+                return new LoginStatus("Access rejected: " + accessPanelResponse.getAccessRejected());
+            case ACCESS_GRANTED:
+                return new LoginStatus(accessPanelResponse.getAccessGranted());
             default:
                 return new LoginStatus("Got unexpected AccessPanel message!");
         }

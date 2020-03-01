@@ -17,19 +17,17 @@ public class Ship extends Commutator {
             return null;
         }
 
-        Protocol.INavigation.GetPositionResponse positionResponse = response.getPositionResponse();
-        if (positionResponse == null)
+        Protocol.Position position = response.getPosition();
+        if (position == null)
             return null;
 
-        return new Position(new Point(positionResponse.getX(), positionResponse.getY()),
-                            new Vector(positionResponse.getVx(), positionResponse.getVy()));
+        return new Position(new Point(position.getX(), position.getY()),
+                            new Vector(position.getVx(), position.getVy()));
     }
 
     private boolean sendPositionRequest() {
         return sendNavigationMessage(
-                Protocol.INavigation.newBuilder()
-                        .setPositionRequest(Protocol.INavigation.GetPosition.newBuilder().build())
-                        .build()
+                Protocol.INavigation.newBuilder().setPositionReq(true).build()
         );
     }
 
